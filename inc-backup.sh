@@ -12,6 +12,11 @@ TARGET_DIR=$1
 BACKUP_BASE_DIR=$2
 BACKUP_DIR=`date "+%Y%m%d-%H%M%S"`
 
+# create the backup dir. if it doesn't exit.
+if [ ! -d $BACKUP_BASE_DIR ]; then
+  mkdir -p $BACKUP_BASE_DIR
+fi
+
 # search the most recent backup dir.
 LAST_BACKUP_DIR=`\ls $BACKUP_BASE_DIR | sort -n -r | head -1`
 if [ ! -z $LAST_BACKUP_DIR ]; then

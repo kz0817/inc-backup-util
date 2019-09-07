@@ -22,7 +22,7 @@ def find_last_backup_dir(args, backup_dir):
 
 
 def create_command(args, backup_dir):
-    cmd = ['rsync', '-av']
+    cmd = ['rsync', '-avS']
 
     if args.checksum:
         cmd.append('--checksum')

@@ -10,7 +10,7 @@ import shutil
 def calc_1st_day_of_months_before(months, today):
     m = today.month - months
     y = today.year
-    while m < 0:
+    while m <= 0:
         m += 12
         y -= 1
     return datetime.date(y, m, 1)

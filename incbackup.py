@@ -21,7 +21,7 @@ def find_last_backup_dir(args, backup_dir):
     return sorted(bkdirs)[-1]
 
 
-def create_command(args, backup_dir):
+def create_rsync_command(args, backup_dir, last_backup_dir):
     cmd = ['rsync', '-avS']
 
     if args.checksum:
@@ -29,24 +29,48 @@ def create_command(args, backup_dir):
     if args.append_verify:
         cmd.append('--append-verify')
 
-    last_backup_dir = find_last_backup_dir(args, backup_dir)
     if last_backup_dir is not None:
         cmd.append('--link-dest')
         cmd.append(os.path.join('..', last_backup_dir))
+
+    if args.reflink:
+        cmd.extend(('--inplace', '--delete'))
 
     cmd.extend((args.source_dir + os.sep, backup_dir))
     return cmd
 
 
-def do_backup(args):
-    subdir = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-    backup_dir = os.path.join(args.backup_base_dir, subdir)
-    cmd = create_command(args, backup_dir)
-
+def run_command(args, cmd):
     print(cmd)
     if (args.dry_run):
         return
     subprocess.run(cmd)
+
+
+def do_copy_last_backup_with_reflink(args, backup_dir, last_backup_dir):
+    if last_backup_dir is None:
+        return
+
+    run_command(args, [
+        'cp', '-ax', '--reflink=always',
+        last_backup_dir,
+        backup_dir
+    ])
+
+
+def do_rsync(args, subdir, last_backup_dir):
+    backup_dir = os.path.join(args.backup_base_dir, subdir)
+    cmd = create_rsync_command(args, backup_dir, last_backup_dir)
+    run_command(args, cmd)
+
+
+def do_backup(args):
+    subdir = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    last_backup_dir = find_last_backup_dir(args, subdir)
+    if args.reflink:
+        do_copy_last_backup_with_reflink(args, subdir, last_backup_dir)
+        last_backup_dir = None
+    do_rsync(args, subdir, last_backup_dir)
 
 
 def main():
@@ -56,6 +80,7 @@ def main():
     parser.add_argument('-n', '--dry-run', action='store_true')
     parser.add_argument('-c', '--checksum', action='store_true')
     parser.add_argument('-a', '--append-verify', action='store_true')
+    parser.add_argument('-l', '--reflink', action='store_true')
     args = parser.parse_args()
     do_backup(args)
 

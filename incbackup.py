@@ -51,10 +51,14 @@ def do_copy_last_backup_with_reflink(args, backup_dir, last_backup_dir):
     if last_backup_dir is None:
         return
 
+
+    def add_base_dir(path):
+        return os.path.join(args.backup_base_dir, path)
+
     run_command(args, [
         'cp', '-ax', '--reflink=always',
-        last_backup_dir,
-        backup_dir
+        add_base_dir(last_backup_dir),
+        add_base_dir(backup_dir)
     ])
 
 
